@@ -89,10 +89,10 @@ describe('commands', () => {
     mockGetAgentValidations.mockResolvedValue(['0xhash1', '0xhash2']);
     mockGetValidationSummary.mockResolvedValue({ count: BigInt(5), avgResponse: 90 });
     mockBuildRegisterTransaction.mockReturnValue({
-      to: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432', data: 'register()', description: 'Register new agent',
+      to: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432', data: '0x1234', value: '0x0', description: 'Register new agent',
     });
     mockBuildGiveFeedbackTransaction.mockReturnValue({
-      to: '0x8004BAa17C55a88189AE136b182e5fdA19dE9b63', data: 'giveFeedback(...)', description: 'Give feedback to agent 1: value=95',
+      to: '0x8004BAa17C55a88189AE136b182e5fdA19dE9b63', data: '0xabcd', value: '0x0', description: 'Give feedback to agent 1: value=95',
     });
   });
 
@@ -327,7 +327,16 @@ describe('commands', () => {
     test('passes URI option', async () => {
       const cmd = makeRegisterCommand();
       await cmd.parseAsync(['--uri', 'ipfs://QmTest'], { from: 'user' });
-      expect(mockBuildRegisterTransaction).toHaveBeenCalledWith('ipfs://QmTest');
+      expect(mockBuildRegisterTransaction).toHaveBeenCalledWith('ipfs://QmTest', undefined);
+    });
+
+    test('passes from option', async () => {
+      const cmd = makeRegisterCommand();
+      await cmd.parseAsync(['--from', '0x1111111111111111111111111111111111111111'], { from: 'user' });
+      expect(mockBuildRegisterTransaction).toHaveBeenCalledWith(
+        undefined,
+        '0x1111111111111111111111111111111111111111',
+      );
     });
 
     test('outputs pretty format', async () => {
@@ -364,6 +373,30 @@ describe('commands', () => {
       await cmd.parseAsync(['--agent', '1', '--value', '95'], { from: 'user' });
       const output = JSON.parse(stdoutOutput.join(''));
       expect(output.to).toContain('0x8004');
+      expect(output.data.startsWith('0x')).toBe(true);
+      expect(output.value).toBe('0x0');
+    });
+
+    test('passes from option', async () => {
+      const cmd = makeRateCommand();
+      await cmd.parseAsync([
+        '--agent',
+        '1',
+        '--value',
+        '95',
+        '--from',
+        '0x1111111111111111111111111111111111111111',
+      ], { from: 'user' });
+      expect(mockBuildGiveFeedbackTransaction).toHaveBeenCalledWith(
+        '1',
+        95,
+        0,
+        '',
+        '',
+        '',
+        '',
+        '0x1111111111111111111111111111111111111111',
+      );
     });
 
     test('rejects non-numeric value', async () => {

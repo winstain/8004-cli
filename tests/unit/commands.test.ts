@@ -139,6 +139,100 @@ describe('commands', () => {
       const output = JSON.parse(stdoutOutput.join(''));
       expect(output.wallet).toBeNull();
     });
+
+    test('parses data: URI registration', async () => {
+      const reg = { name: 'TestAgent', description: 'Test', active: true, services: [{ name: 'MCP', endpoint: 'https://mcp.test' }] };
+      const b64 = Buffer.from(JSON.stringify(reg)).toString('base64');
+      mockGetAgentURI.mockResolvedValue(`data:application/json;base64,${b64}`);
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1'], { from: 'user' });
+      const output = JSON.parse(stdoutOutput.join(''));
+      expect(output.registration.name).toBe('TestAgent');
+    });
+
+    test('parses ipfs:// URI', async () => {
+      mockGetAgentURI.mockResolvedValue('ipfs://QmTest123');
+      // Mock global fetch for IPFS gateway
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ name: 'IPFSAgent' }) }) as any;
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1'], { from: 'user' });
+      const output = JSON.parse(stdoutOutput.join(''));
+      expect(output.registration.name).toBe('IPFSAgent');
+      global.fetch = originalFetch;
+    });
+
+    test('handles fetch failure gracefully', async () => {
+      mockGetAgentURI.mockResolvedValue('https://example.com/agent.json');
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockRejectedValue(new Error('network error')) as any;
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1'], { from: 'user' });
+      const output = JSON.parse(stdoutOutput.join(''));
+      expect(output.registration).toBeNull();
+      global.fetch = originalFetch;
+    });
+
+    test('handles non-ok fetch response', async () => {
+      mockGetAgentURI.mockResolvedValue('https://example.com/agent.json');
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: false }) as any;
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1'], { from: 'user' });
+      const output = JSON.parse(stdoutOutput.join(''));
+      expect(output.registration).toBeNull();
+      global.fetch = originalFetch;
+    });
+
+    test('pretty with registration data', async () => {
+      const reg = { name: 'TestAgent', description: 'A test', active: true, services: [{ name: 'MCP', endpoint: 'https://mcp.test' }] };
+      const b64 = Buffer.from(JSON.stringify(reg)).toString('base64');
+      mockGetAgentURI.mockResolvedValue(`data:application/json;base64,${b64}`);
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('TestAgent');
+      expect(output).toContain('A test');
+      expect(output).toContain('Service: MCP');
+    });
+
+    test('pretty without wallet', async () => {
+      mockGetAgentWallet.mockRejectedValue(new Error('no wallet'));
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('Agent #1');
+      expect(output).not.toContain('Wallet');
+    });
+
+    test('pretty with partial registration (no services)', async () => {
+      const reg = { name: 'Partial', active: false };
+      const b64 = Buffer.from(JSON.stringify(reg)).toString('base64');
+      mockGetAgentURI.mockResolvedValue(`data:application/json;base64,${b64}`);
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('Partial');
+      expect(output).toContain('false');
+    });
+
+    test('pretty with registration with empty services', async () => {
+      const reg = { name: 'Agent', services: [] };
+      const b64 = Buffer.from(JSON.stringify(reg)).toString('base64');
+      mockGetAgentURI.mockResolvedValue(`data:application/json;base64,${b64}`);
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('Agent');
+    });
+
+    test('skips URI parsing for non-fetchable URIs', async () => {
+      mockGetAgentURI.mockResolvedValue('urn:something:else');
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1'], { from: 'user' });
+      const output = JSON.parse(stdoutOutput.join(''));
+      expect(output.registration).toBeNull();
+    });
   });
 
   describe('stats', () => {
@@ -164,14 +258,22 @@ describe('commands', () => {
       expect(output.totalAgents).toBe('unknown');
     });
 
-    test('handles non-Error thrown', async () => {
+    test('handles non-Error thrown in totalAgents', async () => {
       mockGetTotalAgents.mockImplementation(() => { throw 'oops'; });
       const cmd = makeStatsCommand();
       await cmd.parseAsync([], { from: 'user' });
-      // Should still succeed with 'unknown'
       const output = JSON.parse(stdoutOutput.join(''));
       expect(output.totalAgents).toBe('unknown');
     });
+
+    test('pretty with unknown totalAgents', async () => {
+      mockGetTotalAgents.mockRejectedValue(new Error('reverted'));
+      const cmd = makeStatsCommand();
+      await cmd.parseAsync(['--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('unknown');
+    });
+
   });
 
   describe('register', () => {
@@ -192,6 +294,13 @@ describe('commands', () => {
       const cmd = makeRegisterCommand();
       await cmd.parseAsync(['--pretty'], { from: 'user' });
       expect(stdoutOutput.join('\n')).toContain('Register New Agent');
+    });
+
+    test('pretty with URI', async () => {
+      const cmd = makeRegisterCommand();
+      await cmd.parseAsync(['--uri', 'ipfs://QmTest', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('ipfs://QmTest');
     });
 
     test('handles error', async () => {

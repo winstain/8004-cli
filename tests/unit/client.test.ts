@@ -33,6 +33,16 @@ describe('ERC8004Client', () => {
     jest.clearAllMocks();
   });
 
+  test('defaults to base chain for unknown chainId', () => {
+    const c = new ERC8004Client('https://test.rpc', 99999);
+    expect(c).toBeDefined();
+  });
+
+  test('uses mainnet chain', () => {
+    const c = new ERC8004Client('https://test.rpc', 1);
+    expect(c).toBeDefined();
+  });
+
   describe('getAgentURI', () => {
     test('returns URI string', async () => {
       mockReadContract.mockResolvedValue('ipfs://QmTest');

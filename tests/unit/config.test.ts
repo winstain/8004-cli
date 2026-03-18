@@ -108,4 +108,41 @@ describe('config store', () => {
       expect(getChainId('unknown-chain')).toBe(8453);
     });
   });
+
+  describe('getRpcUrl edge cases', () => {
+    test('falls back to base rpc for unknown chain with no config', () => {
+      const original = process.env.ERC8004_RPC_URL;
+      try {
+        delete process.env.ERC8004_RPC_URL;
+        expect(getRpcUrl('unknown-chain', configFile)).toBe('https://mainnet.base.org');
+      } finally {
+        if (original !== undefined) process.env.ERC8004_RPC_URL = original;
+        else delete process.env.ERC8004_RPC_URL;
+      }
+    });
+
+    test('uses config rpcUrl for unknown chain', () => {
+      fs.writeFileSync(configFile, JSON.stringify({ rpcUrl: 'https://custom.rpc' }));
+      const original = process.env.ERC8004_RPC_URL;
+      try {
+        delete process.env.ERC8004_RPC_URL;
+        expect(getRpcUrl('unknown-chain', configFile)).toBe('https://custom.rpc');
+      } finally {
+        if (original !== undefined) process.env.ERC8004_RPC_URL = original;
+        else delete process.env.ERC8004_RPC_URL;
+      }
+    });
+
+    test('prefers config rpcUrl over chain default', () => {
+      fs.writeFileSync(configFile, JSON.stringify({ rpcUrl: 'https://my.rpc' }));
+      const original = process.env.ERC8004_RPC_URL;
+      try {
+        delete process.env.ERC8004_RPC_URL;
+        expect(getRpcUrl('ethereum', configFile)).toBe('https://my.rpc');
+      } finally {
+        if (original !== undefined) process.env.ERC8004_RPC_URL = original;
+        else delete process.env.ERC8004_RPC_URL;
+      }
+    });
+  });
 });

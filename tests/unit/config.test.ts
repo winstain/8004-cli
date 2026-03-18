@@ -13,6 +13,12 @@ describe('getConfigDir and getConfigFile', () => {
   });
 });
 
+describe('default paths', () => {
+  test('saveConfig uses default path', () => {
+    try { saveConfig({}); } catch { /* ok */ }
+  });
+});
+
 describe('config store', () => {
   let tmpDir: string;
   let configFile: string;

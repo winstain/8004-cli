@@ -4,7 +4,7 @@
   "description": "Agent-first CLI for ERC-8004 agent identity, reputation, and validation",
   "main": "dist/index.js",
   "bin": {
-    "8004": "./dist/index.js"
+    "8004": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -20,8 +20,16 @@
     "ethereum",
     "cli"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "winstain",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/winstain/8004-cli.git"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "commonjs",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",

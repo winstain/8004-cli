@@ -1,4 +1,12 @@
-import { createPublicClient, http, type PublicClient, type Address, type Chain } from 'viem';
+import {
+  createPublicClient,
+  encodeFunctionData,
+  http,
+  type PublicClient,
+  type Address,
+  type Chain,
+  type Hex,
+} from 'viem';
 import { base, mainnet, sepolia, polygon, arbitrum, optimism, celo } from 'viem/chains';
 import { CONTRACTS } from '../config/contracts';
 import { identityRegistryAbi, reputationRegistryAbi, validationRegistryAbi } from '../config/abis';
@@ -12,6 +20,16 @@ const CHAIN_MAP: Record<number, Chain> = {
   10: optimism,
   42220: celo,
 };
+
+const ZERO_BYTES32 = `0x${'0'.repeat(64)}` as const;
+
+export interface UnsignedTxPayload {
+  to: Address;
+  data: Hex;
+  value: Hex;
+  from?: Address;
+  description: string;
+}
 
 export class ERC8004Client {
   private client: PublicClient;
@@ -165,22 +183,34 @@ export class ERC8004Client {
     return { count, avgResponse };
   }
 
-  // Build transaction calldata (does not execute)
+  // Build unsigned EVM transactions (does not execute)
 
-  buildRegisterTransaction(agentURI?: string) {
+  buildRegisterTransaction(agentURI?: string, from?: Address): UnsignedTxPayload {
+    const data = agentURI
+      ? encodeFunctionData({ abi: identityRegistryAbi, functionName: 'register', args: [agentURI] })
+      : encodeFunctionData({ abi: identityRegistryAbi, functionName: 'register', args: [] });
+
     return {
       to: CONTRACTS.identityRegistry,
-      data: agentURI ? `register("${agentURI}")` : 'register()',
+      data,
+      value: '0x0',
+      ...(from ? { from } : {}),
       description: agentURI
         ? `Register new agent with URI: ${agentURI}`
         : 'Register new agent (no URI)',
     };
   }
 
-  buildSetURITransaction(agentId: string, newURI: string) {
+  buildSetURITransaction(agentId: string, newURI: string, from?: Address): UnsignedTxPayload {
     return {
       to: CONTRACTS.identityRegistry,
-      data: `setAgentURI(${agentId}, "${newURI}")`,
+      data: encodeFunctionData({
+        abi: identityRegistryAbi,
+        functionName: 'setAgentURI',
+        args: [BigInt(agentId), newURI],
+      }),
+      value: '0x0',
+      ...(from ? { from } : {}),
       description: `Update agent ${agentId} URI to ${newURI}`,
     };
   }
@@ -193,10 +223,17 @@ export class ERC8004Client {
     tag2: string = '',
     endpoint: string = '',
     feedbackURI: string = '',
-  ) {
+    from?: Address,
+  ): UnsignedTxPayload {
     return {
       to: CONTRACTS.reputationRegistry,
-      data: `giveFeedback(${agentId}, ${value}, ${valueDecimals}, "${tag1}", "${tag2}", "${endpoint}", "${feedbackURI}", 0x0)`,
+      data: encodeFunctionData({
+        abi: reputationRegistryAbi,
+        functionName: 'giveFeedback',
+        args: [BigInt(agentId), BigInt(value), valueDecimals, tag1, tag2, endpoint, feedbackURI, ZERO_BYTES32],
+      }),
+      value: '0x0',
+      ...(from ? { from } : {}),
       description: `Give feedback to agent ${agentId}: value=${value}, tags=[${tag1}, ${tag2}]`,
     };
   }
@@ -206,10 +243,17 @@ export class ERC8004Client {
     agentId: string,
     requestURI: string,
     requestHash: string,
-  ) {
+    from?: Address,
+  ): UnsignedTxPayload {
     return {
       to: CONTRACTS.validationRegistry,
-      data: `validationRequest(${validatorAddress}, ${agentId}, "${requestURI}", ${requestHash})`,
+      data: encodeFunctionData({
+        abi: validationRegistryAbi,
+        functionName: 'validationRequest',
+        args: [validatorAddress as Address, BigInt(agentId), requestURI, requestHash as `0x${string}`],
+      }),
+      value: '0x0',
+      ...(from ? { from } : {}),
       description: `Request validation for agent ${agentId} from ${validatorAddress}`,
     };
   }

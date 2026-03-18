@@ -1,0 +1,41 @@
+{
+  "name": "8004-cli",
+  "version": "1.0.0",
+  "description": "Agent-first CLI for ERC-8004 agent identity, reputation, and validation",
+  "main": "dist/index.js",
+  "bin": {
+    "8004": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "jest --runInBand --verbose",
+    "test:coverage": "jest --runInBand --coverage --forceExit"
+  },
+  "keywords": [
+    "erc-8004",
+    "agent",
+    "identity",
+    "reputation",
+    "ethereum",
+    "cli"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "chalk": "^4.1.2",
+    "commander": "^14.0.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "viem": "^2.31.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.5.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.6"
+  }
+}

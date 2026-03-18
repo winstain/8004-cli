@@ -34,13 +34,15 @@ describe('ERC8004Client', () => {
   });
 
   test('defaults to base chain for unknown chainId', () => {
-    const c = new ERC8004Client('https://test.rpc', 99999);
-    expect(c).toBeDefined();
+    expect(new ERC8004Client('https://test.rpc', 99999)).toBeDefined();
   });
 
   test('uses mainnet chain', () => {
-    const c = new ERC8004Client('https://test.rpc', 1);
-    expect(c).toBeDefined();
+    expect(new ERC8004Client('https://test.rpc', 1)).toBeDefined();
+  });
+
+  test('uses default chainId when not provided', () => {
+    expect(new ERC8004Client('https://test.rpc')).toBeDefined();
   });
 
   describe('getAgentURI', () => {
@@ -164,10 +166,16 @@ describe('ERC8004Client', () => {
       expect(tx.data).toContain('setAgentURI');
     });
 
-    test('buildGiveFeedbackTransaction', () => {
+    test('buildGiveFeedbackTransaction with all params', () => {
       const tx = client.buildGiveFeedbackTransaction('1', 95, 0, 'excellent', 'fast');
       expect(tx.to).toBe('0x8004BAa17C55a88189AE136b182e5fdA19dE9b63');
       expect(tx.description).toContain('95');
+    });
+
+    test('buildGiveFeedbackTransaction with defaults', () => {
+      const tx = client.buildGiveFeedbackTransaction('1', 50);
+      expect(tx.to).toBe('0x8004BAa17C55a88189AE136b182e5fdA19dE9b63');
+      expect(tx.description).toContain('50');
     });
 
     test('buildValidationRequestTransaction', () => {

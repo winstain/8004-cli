@@ -43,9 +43,12 @@ jest.mock('../../src/api/client', () => ({
   })),
 }));
 
+const mockGetRpcUrl = jest.fn().mockReturnValue('https://mock.rpc');
+const mockGetChainId = jest.fn().mockReturnValue(8453);
+
 jest.mock('../../src/config/store', () => ({
-  getRpcUrl: () => 'https://mock.rpc',
-  getChainId: () => 8453,
+  getRpcUrl: (...args: any[]) => mockGetRpcUrl(...args),
+  getChainId: (...args: any[]) => mockGetChainId(...args),
 }));
 
 import { makeLookupCommand } from '../../src/commands/lookup';
@@ -205,6 +208,17 @@ describe('commands', () => {
       expect(output).not.toContain('Wallet');
     });
 
+    test('pretty with registration missing description and endpoint', async () => {
+      const reg = { name: 'Agent', active: true, services: [{ name: 'MCP' }] };
+      const b64 = Buffer.from(JSON.stringify(reg)).toString('base64');
+      mockGetAgentURI.mockResolvedValue(`data:application/json;base64,${b64}`);
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('Agent');
+      expect(output).toContain('Service: MCP');
+    });
+
     test('pretty with partial registration (no services)', async () => {
       const reg = { name: 'Partial', active: false };
       const b64 = Buffer.from(JSON.stringify(reg)).toString('base64');
@@ -214,6 +228,17 @@ describe('commands', () => {
       const output = stdoutOutput.join('\n');
       expect(output).toContain('Partial');
       expect(output).toContain('false');
+    });
+
+    test('pretty with registration missing name', async () => {
+      const reg = { active: true };
+      const b64 = Buffer.from(JSON.stringify(reg)).toString('base64');
+      mockGetAgentURI.mockResolvedValue(`data:application/json;base64,${b64}`);
+      const cmd = makeLookupCommand();
+      await cmd.parseAsync(['--agent', '1', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('Agent #1');
+      expect(output).not.toContain('Name');
     });
 
     test('pretty with registration with empty services', async () => {
@@ -274,6 +299,21 @@ describe('commands', () => {
       expect(output).toContain('unknown');
     });
 
+    test('outer catch with Error', async () => {
+      mockGetChainId.mockImplementationOnce(() => { throw new Error('chain fail'); });
+      const cmd = makeStatsCommand();
+      await cmd.parseAsync([], { from: 'user' });
+      const err = JSON.parse(stderrOutput[0]);
+      expect(err.code).toBe('RPC_ERROR');
+    });
+
+    test('outer catch with non-Error', async () => {
+      mockGetChainId.mockImplementationOnce(() => { throw 42; });
+      const cmd = makeStatsCommand();
+      await cmd.parseAsync([], { from: 'user' });
+      const err = JSON.parse(stderrOutput[0]);
+      expect(err.code).toBe('UNKNOWN');
+    });
   });
 
   describe('register', () => {
@@ -474,6 +514,14 @@ describe('commands', () => {
       expect(stdoutOutput.join('\n')).toContain('Feedback');
     });
 
+    test('pretty with empty tags shows (none)', async () => {
+      mockReadFeedback.mockResolvedValue({ value: BigInt(50), valueDecimals: 0, tag1: '', tag2: '', isRevoked: false });
+      const cmd = makeReputationCommand();
+      await cmd.parseAsync(['feedback', '--agent', '1', '--client', '0xabc', '--index', '0', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('(none)');
+    });
+
     test('handles error', async () => {
       mockReadFeedback.mockRejectedValue(new Error('fail'));
       const cmd = makeReputationCommand();
@@ -501,6 +549,16 @@ describe('commands', () => {
       const cmd = makeValidationCommand();
       await cmd.parseAsync(['status', '--hash', '0xabc', '--pretty'], { from: 'user' });
       expect(stdoutOutput.join('\n')).toContain('Validation Status');
+    });
+
+    test('pretty with empty tag shows (none)', async () => {
+      mockGetValidationStatus.mockResolvedValue({
+        validatorAddress: '0xval', agentId: BigInt(1), response: 90,
+        responseHash: '0x', tag: '', lastUpdate: BigInt(1700000000),
+      });
+      const cmd = makeValidationCommand();
+      await cmd.parseAsync(['status', '--hash', '0xabc', '--pretty'], { from: 'user' });
+      expect(stdoutOutput.join('\n')).toContain('(none)');
     });
 
     test('handles error', async () => {

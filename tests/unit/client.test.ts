@@ -152,35 +152,50 @@ describe('ERC8004Client', () => {
     test('buildRegisterTransaction without URI', () => {
       const tx = client.buildRegisterTransaction();
       expect(tx.to).toBe('0x8004A169FB4a3325136EB29fA0ceB6D2e539a432');
-      expect(tx.data).toBe('register()');
+      expect(tx.data.startsWith('0x')).toBe(true);
+      expect(tx.value).toBe('0x0');
+      expect(tx.from).toBeUndefined();
     });
 
-    test('buildRegisterTransaction with URI', () => {
-      const tx = client.buildRegisterTransaction('ipfs://QmTest');
-      expect(tx.data).toContain('ipfs://QmTest');
+    test('buildRegisterTransaction with URI and from', () => {
+      const from = '0x1111111111111111111111111111111111111111' as `0x${string}`;
+      const tx = client.buildRegisterTransaction('ipfs://QmTest', from);
+      expect(tx.data.startsWith('0x')).toBe(true);
+      expect(tx.from).toBe(from);
     });
 
     test('buildSetURITransaction', () => {
       const tx = client.buildSetURITransaction('1', 'ipfs://new');
       expect(tx.to).toBe('0x8004A169FB4a3325136EB29fA0ceB6D2e539a432');
-      expect(tx.data).toContain('setAgentURI');
+      expect(tx.data.startsWith('0x')).toBe(true);
+      expect(tx.value).toBe('0x0');
     });
 
     test('buildGiveFeedbackTransaction with all params', () => {
       const tx = client.buildGiveFeedbackTransaction('1', 95, 0, 'excellent', 'fast');
       expect(tx.to).toBe('0x8004BAa17C55a88189AE136b182e5fdA19dE9b63');
+      expect(tx.data.startsWith('0x')).toBe(true);
+      expect(tx.value).toBe('0x0');
       expect(tx.description).toContain('95');
     });
 
     test('buildGiveFeedbackTransaction with defaults', () => {
       const tx = client.buildGiveFeedbackTransaction('1', 50);
       expect(tx.to).toBe('0x8004BAa17C55a88189AE136b182e5fdA19dE9b63');
+      expect(tx.data.startsWith('0x')).toBe(true);
       expect(tx.description).toContain('50');
     });
 
     test('buildValidationRequestTransaction', () => {
-      const tx = client.buildValidationRequestTransaction('0xval', '1', 'ipfs://req', '0xhash');
+      const tx = client.buildValidationRequestTransaction(
+        '0x2222222222222222222222222222222222222222',
+        '1',
+        'ipfs://req',
+        `0x${'a'.repeat(64)}`,
+      );
       expect(tx.to).toBe('0x8004Cb1BF31DAf7788923b405b754f57acEB4272');
+      expect(tx.data.startsWith('0x')).toBe(true);
+      expect(tx.value).toBe('0x0');
       expect(tx.description).toContain('agent 1');
     });
   });

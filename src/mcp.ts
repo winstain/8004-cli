@@ -106,11 +106,12 @@ export async function startMcpServer() {
     'Build a transaction to register a new ERC-8004 agent (returns calldata, does not execute)',
     {
       uri: z.string().optional().describe('Agent registration file URI'),
+      from: z.string().optional().describe('Sender address for unsigned tx payload'),
       chain: z.string().optional().describe('Chain name or ID (default: base)'),
     },
-    async ({ uri, chain }) => {
+    async ({ uri, from, chain }) => {
       const client = getClient(chain);
-      const tx = client.buildRegisterTransaction(uri);
+      const tx = client.buildRegisterTransaction(uri, from as Address | undefined);
       return {
         content: [{
           type: 'text' as const,
@@ -128,11 +129,21 @@ export async function startMcpServer() {
       value: z.number().describe('Rating value'),
       tag1: z.string().optional().describe('Primary tag'),
       tag2: z.string().optional().describe('Secondary tag'),
+      from: z.string().optional().describe('Sender address for unsigned tx payload'),
       chain: z.string().optional().describe('Chain name or ID (default: base)'),
     },
-    async ({ agentId, value, tag1, tag2, chain }) => {
+    async ({ agentId, value, tag1, tag2, from, chain }) => {
       const client = getClient(chain);
-      const tx = client.buildGiveFeedbackTransaction(agentId, value, 0, tag1 || '', tag2 || '');
+      const tx = client.buildGiveFeedbackTransaction(
+        agentId,
+        value,
+        0,
+        tag1 || '',
+        tag2 || '',
+        '',
+        '',
+        from as Address | undefined,
+      );
       return {
         content: [{
           type: 'text' as const,

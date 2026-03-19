@@ -9,8 +9,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "test": "jest --runInBand --verbose",
-    "test:coverage": "jest --runInBand --coverage --forceExit"
+    "test": "jest --runInBand --verbose --testPathPatterns=tests/unit",
+    "test:coverage": "jest --runInBand --coverage --testPathPatterns=tests/unit"
   },
   "keywords": [
     "erc-8004",
@@ -28,7 +28,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "type": "commonjs",
   "dependencies": {

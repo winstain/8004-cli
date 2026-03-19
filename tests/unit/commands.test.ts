@@ -339,6 +339,13 @@ describe('commands', () => {
       );
     });
 
+    test('pretty with from', async () => {
+      const cmd = makeRegisterCommand();
+      await cmd.parseAsync(['--from', '0x1111111111111111111111111111111111111111', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('0x1111111111111111111111111111111111111111');
+    });
+
     test('outputs pretty format', async () => {
       const cmd = makeRegisterCommand();
       await cmd.parseAsync(['--pretty'], { from: 'user' });
@@ -399,6 +406,21 @@ describe('commands', () => {
       );
     });
 
+    test('passes feedback-uri option', async () => {
+      const cmd = makeRateCommand();
+      await cmd.parseAsync(['--agent', '1', '--value', '95', '--feedback-uri', 'ipfs://QmFeedback'], { from: 'user' });
+      expect(mockBuildGiveFeedbackTransaction).toHaveBeenCalledWith(
+        '1',
+        95,
+        0,
+        '',
+        '',
+        '',
+        'ipfs://QmFeedback',
+        undefined,
+      );
+    });
+
     test('rejects non-numeric value', async () => {
       const cmd = makeRateCommand();
       await cmd.parseAsync(['--agent', '1', '--value', 'abc'], { from: 'user' });
@@ -436,6 +458,13 @@ describe('commands', () => {
       expect(output).toContain('good');
       expect(output).toContain('fast');
       expect(output).toContain('https://test');
+    });
+
+    test('pretty with from', async () => {
+      const cmd = makeRateCommand();
+      await cmd.parseAsync(['--agent', '1', '--value', '95', '--from', '0x1111111111111111111111111111111111111111', '--pretty'], { from: 'user' });
+      const output = stdoutOutput.join('\n');
+      expect(output).toContain('0x1111111111111111111111111111111111111111');
     });
 
     test('handles error', async () => {

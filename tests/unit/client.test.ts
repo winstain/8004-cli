@@ -171,6 +171,12 @@ describe('ERC8004Client', () => {
       expect(tx.value).toBe('0x0');
     });
 
+    test('buildSetURITransaction with from', () => {
+      const from = '0x3333333333333333333333333333333333333333' as `0x${string}`;
+      const tx = client.buildSetURITransaction('1', 'ipfs://new', from);
+      expect(tx.from).toBe(from);
+    });
+
     test('buildGiveFeedbackTransaction with all params', () => {
       const tx = client.buildGiveFeedbackTransaction('1', 95, 0, 'excellent', 'fast');
       expect(tx.to).toBe('0x8004BAa17C55a88189AE136b182e5fdA19dE9b63');
@@ -186,6 +192,12 @@ describe('ERC8004Client', () => {
       expect(tx.description).toContain('50');
     });
 
+    test('buildGiveFeedbackTransaction with from', () => {
+      const from = '0x5555555555555555555555555555555555555555' as `0x${string}`;
+      const tx = client.buildGiveFeedbackTransaction('1', 50, 0, '', '', '', '', from);
+      expect(tx.from).toBe(from);
+    });
+
     test('buildValidationRequestTransaction', () => {
       const tx = client.buildValidationRequestTransaction(
         '0x2222222222222222222222222222222222222222',
@@ -197,6 +209,18 @@ describe('ERC8004Client', () => {
       expect(tx.data.startsWith('0x')).toBe(true);
       expect(tx.value).toBe('0x0');
       expect(tx.description).toContain('agent 1');
+    });
+
+    test('buildValidationRequestTransaction with from', () => {
+      const from = '0x4444444444444444444444444444444444444444' as `0x${string}`;
+      const tx = client.buildValidationRequestTransaction(
+        '0x2222222222222222222222222222222222222222',
+        '1',
+        'ipfs://req',
+        `0x${'a'.repeat(64)}`,
+        from,
+      );
+      expect(tx.from).toBe(from);
     });
   });
 });

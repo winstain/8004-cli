@@ -1,12 +1,12 @@
 name: CI
+
 on:
-  push:
-    branches: [main]
   pull_request:
+  push:
     branches: [main]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,6 +22,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Typecheck
+        if: ${{ hashFiles('tsconfig.json') != '' }}
+        run: |
+          if jq -e '.scripts.typecheck' package.json >/dev/null; then
+            npm run typecheck
+          else
+            echo "No typecheck script; skipping"
+          fi
 
       - name: Build
         run: npm run build

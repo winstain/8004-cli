@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/winstain/8004-cli/compare/v1.0.1...v1.0.2) (2026-03-20)
+
+
+### Bug Fixes
+
+* publish without provenance from private repo ([5c99abf](https://github.com/winstain/8004-cli/commit/5c99abf9a932969d1b8a8dcfc249aeab6d4ac030))
+* **tx:** emit MoonPay-ready unsigned EVM payloads with ABI calldata ([379d41f](https://github.com/winstain/8004-cli/commit/379d41f3bf0dd05461a14985057c256fe80298b6))
+
 ## [1.0.1](https://github.com/winstain/8004-cli/compare/v1.0.0...v1.0.1) (2026-03-18)
 
 

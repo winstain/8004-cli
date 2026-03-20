@@ -5,6 +5,8 @@ import { type Address } from 'viem';
 import { ERC8004Client } from './api/client';
 import { getRpcUrl, getChainId } from './config/store';
 
+const pkg = require('../package.json');
+
 function getClient(chain?: string): ERC8004Client {
   return new ERC8004Client(getRpcUrl(chain), getChainId(chain));
 }
@@ -12,7 +14,7 @@ function getClient(chain?: string): ERC8004Client {
 export async function startMcpServer() {
   const server = new McpServer({
     name: '8004-cli',
-    version: '1.0.0',
+    version: pkg.version,
   });
 
   server.tool(
